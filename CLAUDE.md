@@ -15,6 +15,7 @@ The config uses `wezterm.config_builder()` with a modular structure:
 - **`tmux.lua`** — `tmux.detect(pane)` checks domain name and foreground process; `tmux.bin` resolves tmux path at config load (PATH first, then Homebrew fallback); left status indicator; `Ctrl+Shift+A` session picker that attaches via `tmux -CC`
 - **`health.lua`** — 20-20-20 rule: right-status warning every 20 minutes for 25 seconds; `Ctrl+Shift+H` toggle; `enabled` is module-level mutable state
 - **`help.lua`** — F1 InputSelector cheat sheet listing all keybindings in two-column layout
+- **`hooks/claude-state.sh`** — Claude Code hook script; emits OSC 1337 SetUserVar to ancestor PTY for tab state tracking (running/asking/idle); handles tmux passthrough
 
 ## Keybindings
 
@@ -49,4 +50,5 @@ Errors appear in WezTerm's debug overlay: `Ctrl+Shift+L`.
 - `tmux.bin` resolves the tmux binary path once at config load (PATH then Homebrew fallback)
 - `enabled` in `health.lua` is module-level mutable state toggled via keybinding callback
 - The `update-status` event drives both left status (tmux/shell indicator) and right status (health reminder)
-- Color constants (`col_green`, `col_subtext`, `col_yellow`) use catppuccin mocha palette values
+- Color constants (`col_green`, `col_blue`, `col_peach`, `col_subtext`, `col_yellow`) use catppuccin mocha palette values
+- `hooks/claude-state.sh` walks `/proc` to find ancestor PTY since Claude Code redirects hook stdout; configured via hooks in `~/.claude/settings.json`

@@ -7,7 +7,7 @@ Modular [WezTerm](https://wezfurlong.org/wezterm/) configuration with Catppuccin
 - **Catppuccin Mocha** color scheme with translucent, borderless window
 - **Tmux integration** — auto-detects tmux panes, session picker (`Ctrl+Shift+A`), context-aware tab rename
 - **20-20-20 health reminders** — status bar warning every 20 minutes to look away for 20 seconds
-- **Claude Code tab tracking** — tabs show a green checkmark when Claude Code finishes (requires shell integration)
+- **Claude Code tab tracking** — tabs change color by state: blue (running), peach (needs input), green (done)
 - **F1 cheat sheet** — overlay listing all keybindings
 
 ## Structure
@@ -19,7 +19,7 @@ Modular [WezTerm](https://wezfurlong.org/wezterm/) configuration with Catppuccin
 | `tmux.lua` | Tmux detection, binary resolution, session picker, left status |
 | `health.lua` | 20-20-20 reminder with toggle |
 | `help.lua` | F1 keybinding cheat sheet |
-| `shell-integration.zsh` | Claude Code state tracking via WezTerm user vars |
+| `hooks/claude-state.sh` | Claude Code hook — emits WezTerm user vars for tab state |
 
 ## Keybindings
 
@@ -41,16 +41,42 @@ Modular [WezTerm](https://wezfurlong.org/wezterm/) configuration with Catppuccin
 git clone https://github.com/connormclaud/wezterm.git ~/.config/wezterm
 ```
 
-Optionally, source the shell integration in `~/.zshrc` for Claude Code tab indicators:
-
-```bash
-source ~/.config/wezterm/shell-integration.zsh
-```
-
 WezTerm hot-reloads on save. To validate syntax:
 
 ```bash
 wezterm --config-file ~/.config/wezterm/wezterm.lua ls-fonts
+```
+
+## Claude Code Tab Tracking
+
+Tabs visually indicate Claude Code state in background tabs:
+
+| State | Color | Indicator |
+|-------|-------|-----------|
+| Running | Blue | `…` |
+| Needs input | Peach | `?` |
+| Done | Green | `✓` |
+
+This uses [Claude Code hooks](https://code.claude.com/docs/en/hooks). Add to `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [{
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh running", "async": true }]
+    }],
+    "PostToolUse": [{
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh running", "async": true }]
+    }],
+    "Notification": [{
+      "matcher": "permission_prompt|elicitation_dialog",
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh asking", "async": true }]
+    }],
+    "Stop": [{
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh idle", "async": true }]
+    }]
+  }
+}
 ```
 
 ## See Also

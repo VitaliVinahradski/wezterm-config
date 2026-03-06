@@ -88,6 +88,8 @@ end
 local col_text    = "#cdd6f4"
 local col_green   = "#a6e3a1"
 local col_yellow  = "#f9e2af"
+local col_blue    = "#89b4fa"
+local col_peach   = "#fab387"
 local col_overlay = "#6c7086"
 local col_surface = "#45475a"
 
@@ -109,13 +111,26 @@ wezterm.on("format-tab-title", function(tab)
     end
   end
 
+  local claude = tab.active_pane.user_vars.claude_state
+
   if tab.is_active then
     return {
       { Background = { Color = col_surface } },
       { Foreground = { Color = col_text } },
       { Text = string.format(" %d: %s ", index, title) },
     }
-  elseif tab.active_pane.user_vars.claude_state == "idle" then
+  elseif claude == "running" then
+    return {
+      { Foreground = { Color = col_blue } },
+      { Text = string.format(" %d: %s … ", index, title) },
+    }
+  elseif claude == "asking" then
+    return {
+      { Foreground = { Color = col_peach } },
+      { Attribute = { Intensity = "Bold" } },
+      { Text = string.format(" %d: %s ? ", index, title) },
+    }
+  elseif claude == "idle" then
     return {
       { Foreground = { Color = col_green } },
       { Attribute = { Intensity = "Bold" } },
