@@ -30,25 +30,23 @@ function M.detect(pane)
   return false
 end
 
--- catppuccin mocha
-local col_green  = "#a6e3a1"
-local col_subtext = "#a6adc8"
+local theme = require("theme")
 
 function M.update_left_status(window, pane)
   if M.detect(pane) then
     window:set_left_status(wezterm.format({
-      { Foreground = { Color = col_green } },
+      { Foreground = { Color = theme.green } },
       { Attribute = { Intensity = "Bold" } },
       { Text = " [tmux]" },
       "ResetAttributes",
-      { Foreground = { Color = col_subtext } },
+      { Foreground = { Color = theme.subtext } },
       { Text = " F1:help" },
     }))
   else
     local proc = pane:get_foreground_process_name() or ""
     local shell = proc:match("([^/]+)$") or "shell"
     window:set_left_status(wezterm.format({
-      { Foreground = { Color = col_subtext } },
+      { Foreground = { Color = theme.subtext } },
       { Text = string.format(" [%s]", shell) },
     }))
   end

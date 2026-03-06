@@ -11,11 +11,13 @@ This is a WezTerm terminal emulator configuration, split into modular Lua files.
 The config uses `wezterm.config_builder()` with a modular structure:
 
 - **`wezterm.lua`** — entry point; loads modules, merges keybindings from each module's `keys()` export, sets up the `update-status` event (left status from tmux, right status from health)
+- **`theme.lua`** — catppuccin mocha palette (single source of truth); owns `format-tab-title` with `register_pane_style(fn)` for module-injected per-pane styling
+- **`claude.lua`** — registers Claude Code tab state styles (running/asking/idle) with theme via `register_pane_style`
 - **`keys.lua`** — pane splits, pane kill, Shift+Enter CSI u passthrough, F2 context-aware tab/tmux rename (pre-fills current name)
 - **`tmux.lua`** — `tmux.detect(pane)` checks domain name and foreground process; `tmux.bin` resolves tmux path at config load (PATH first, then Homebrew fallback); left status indicator; `Ctrl+Shift+A` session picker that attaches via `tmux -CC`
 - **`health.lua`** — 20-20-20 rule: right-status warning every 20 minutes for 25 seconds; `Ctrl+Shift+H` toggle; `enabled` is module-level mutable state
 - **`help.lua`** — F1 InputSelector cheat sheet listing all keybindings in two-column layout
-- **`hooks/claude-state.sh`** — Claude Code hook script; emits OSC 1337 SetUserVar to ancestor PTY for tab state tracking (running/asking/idle); handles tmux passthrough
+- **`hooks/claude-state.sh`** — Claude Code hook script; emits OSC 1337 SetUserVar to ancestor PTY for tab state tracking; handles tmux passthrough
 
 ## Keybindings
 
@@ -50,5 +52,6 @@ Errors appear in WezTerm's debug overlay: `Ctrl+Shift+L`.
 - `tmux.bin` resolves the tmux binary path once at config load (PATH then Homebrew fallback)
 - `enabled` in `health.lua` is module-level mutable state toggled via keybinding callback
 - The `update-status` event drives both left status (tmux/shell indicator) and right status (health reminder)
-- Color constants (`col_green`, `col_blue`, `col_peach`, `col_subtext`, `col_yellow`) use catppuccin mocha palette values
+- All color constants live in `theme.lua` as the single source of truth; modules require theme and use `theme.green`, `theme.subtext`, etc.
+- `theme.register_pane_style(fn)` lets modules inject custom tab styling; `claude.lua` uses this for state-based tab indicators
 - `hooks/claude-state.sh` walks `/proc` to find ancestor PTY since Claude Code redirects hook stdout; configured via hooks in `~/.claude/settings.json`

@@ -1,6 +1,8 @@
 local wezterm = require("wezterm")
 local config = wezterm.config_builder()
 
+local theme  = require("theme")
+local claude = require("claude")
 local tmux   = require("tmux")
 local health = require("health")
 local help   = require("help")
@@ -78,76 +80,14 @@ config.warn_about_missing_glyphs = false
 
 -- Compose keybindings from all modules
 config.keys = {}
-for _, mod in ipairs({ tmux, health, help, keys }) do
+for _, mod in ipairs({ theme, claude, tmux, health, help, keys }) do
   for _, k in ipairs(mod.keys()) do
     table.insert(config.keys, k)
   end
 end
 
--- Tab activity colors (catppuccin mocha)
-local col_text    = "#cdd6f4"
-local col_green   = "#a6e3a1"
-local col_yellow  = "#f9e2af"
-local col_blue    = "#89b4fa"
-local col_peach   = "#fab387"
-local col_overlay = "#6c7086"
-local col_surface = "#45475a"
-
--- Tab title: index + cwd folder, respects F2 manual rename
--- Colors: active = bright on surface, claude-idle = bold green ✓,
---         unseen output = yellow •, quiet = dimmed
-wezterm.on("format-tab-title", function(tab)
-  local index = tab.tab_index + 1
-  -- F2 rename takes priority
-  local title = tab.tab_title
-  if not title or #title == 0 then
-    local cwd = tab.active_pane.current_working_dir
-    if cwd then
-      local path = cwd.file_path or ""
-      title = path:match("([^/]+)/?$") or ""
-    end
-    if not title or #title == 0 then
-      title = tab.active_pane.title
-    end
-  end
-
-  local claude = tab.active_pane.user_vars.claude_state
-
-  if tab.is_active then
-    return {
-      { Background = { Color = col_surface } },
-      { Foreground = { Color = col_text } },
-      { Text = string.format(" %d: %s ", index, title) },
-    }
-  elseif claude == "running" then
-    return {
-      { Foreground = { Color = col_blue } },
-      { Text = string.format(" %d: %s … ", index, title) },
-    }
-  elseif claude == "asking" then
-    return {
-      { Foreground = { Color = col_peach } },
-      { Attribute = { Intensity = "Bold" } },
-      { Text = string.format(" %d: %s ? ", index, title) },
-    }
-  elseif claude == "idle" then
-    return {
-      { Foreground = { Color = col_green } },
-      { Attribute = { Intensity = "Bold" } },
-      { Text = string.format(" %d: %s ✓ ", index, title) },
-    }
-  elseif tab.active_pane.has_unseen_output then
-    return {
-      { Foreground = { Color = col_yellow } },
-      { Text = string.format(" %d: %s • ", index, title) },
-    }
-  else
-    return {
-      { Foreground = { Color = col_overlay } },
-      { Text = string.format(" %d: %s ", index, title) },
-    }
-  end
-end)
+-- Tab title rendering (theme owns format-tab-title, claude registers its pane styles)
+theme.setup_tab_title()
 
 -- Status bar: left from tmux, right from health
 wezterm.on("update-status", function(window, pane)

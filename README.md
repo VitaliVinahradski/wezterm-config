@@ -15,6 +15,8 @@ Modular [WezTerm](https://wezfurlong.org/wezterm/) configuration with Catppuccin
 | File | Purpose |
 |------|---------|
 | `wezterm.lua` | Entry point — loads modules, merges keybindings, sets up status bar |
+| `theme.lua` | Catppuccin Mocha palette + tab title rendering with pane style registry |
+| `claude.lua` | Registers Claude Code tab state styles (running/asking/idle) with theme |
 | `keys.lua` | Pane splits, kill pane, Shift+Enter passthrough, F2 rename |
 | `tmux.lua` | Tmux detection, binary resolution, session picker, left status |
 | `health.lua` | 20-20-20 reminder with toggle |

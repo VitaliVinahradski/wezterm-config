@@ -5,9 +5,7 @@ local M = {}
 local interval_seconds = 20 * 60
 local enabled = true
 
--- catppuccin mocha
-local col_subtext = "#a6adc8"
-local col_yellow  = "#f9e2af"
+local theme = require("theme")
 
 function M.update_right_status(window)
   if enabled then
@@ -17,20 +15,20 @@ function M.update_right_status(window)
       local remaining = 25 - cycle
       local msg = string.format(" ⚠ Look away ~6m for %ds ", remaining)
       window:set_right_status(wezterm.format({
-        { Foreground = { Color = "#1e1e2e" } },
-        { Background = { Color = col_yellow } },
+        { Foreground = { Color = theme.base } },
+        { Background = { Color = theme.yellow } },
         { Attribute = { Intensity = "Bold" } },
         { Text = msg },
       }))
     else
       window:set_right_status(wezterm.format({
-        { Foreground = { Color = col_subtext } },
+        { Foreground = { Color = theme.subtext } },
         { Text = " 🔔 " },
       }))
     end
   else
     window:set_right_status(wezterm.format({
-      { Foreground = { Color = col_subtext } },
+      { Foreground = { Color = theme.subtext } },
       { Text = " 🔕 " },
     }))
   end
