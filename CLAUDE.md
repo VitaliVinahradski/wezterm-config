@@ -56,4 +56,4 @@ Errors appear in WezTerm's debug overlay: `Ctrl+Shift+L`.
 - All color constants live in `theme.lua` as the single source of truth; modules require theme and use `theme.green`, `theme.subtext`, etc.
 - `theme.register_pane_style(fn)` lets modules inject custom tab styling; `claude.lua` uses this for state-based tab indicators
 - `hooks/claude-state.sh` (Linux) walks `/proc` to find ancestor PTY since Claude Code redirects hook stdout; `hooks/claude-state.zsh` (macOS) uses `ps` instead
-- Hook events: `PreToolUse` → running, `Notification` → asking, `Stop` → idle, `SessionEnd` → clear (no argument); configured in `~/.claude/settings.json`
+- Hook events: `PreToolUse` → running, `Notification` (permission_prompt, elicitation_dialog only) → asking, `Stop` → idle, `SessionEnd` → clear (no argument); configured in `~/.claude/settings.json`

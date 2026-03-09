@@ -70,9 +70,16 @@ This uses [Claude Code hooks](https://code.claude.com/docs/en/hooks). Add to `~/
     "PreToolUse": [{
       "hooks": [{ "type": "command", "command": "~/.config/wezterm/hooks/claude-state.sh running" }]
     }],
-    "Notification": [{
-      "hooks": [{ "type": "command", "command": "~/.config/wezterm/hooks/claude-state.sh asking" }]
-    }],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [{ "type": "command", "command": "~/.config/wezterm/hooks/claude-state.sh asking" }]
+      },
+      {
+        "matcher": "elicitation_dialog",
+        "hooks": [{ "type": "command", "command": "~/.config/wezterm/hooks/claude-state.sh asking" }]
+      }
+    ],
     "Stop": [{
       "hooks": [{ "type": "command", "command": "~/.config/wezterm/hooks/claude-state.sh idle" }]
     }],
