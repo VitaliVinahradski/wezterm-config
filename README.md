@@ -67,8 +67,18 @@ This uses [Claude Code hooks](https://code.claude.com/docs/en/hooks). Add to `~/
 ```json
 {
   "hooks": {
-    "PreToolUse": [{
-      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh running", "async": true }]
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion|ExitPlanMode",
+        "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh asking", "async": true }]
+      },
+      {
+        "matcher": "^(?!AskUserQuestion$|ExitPlanMode$)",
+        "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh running", "async": true }]
+      }
+    ],
+    "PermissionRequest": [{
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh asking", "async": true }]
     }],
     "Notification": [{
       "matcher": "permission_prompt|elicitation_dialog",

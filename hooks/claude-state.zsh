@@ -31,12 +31,22 @@ done
 # When Stop fires (idle), check if Claude still has background tasks running.
 # Background Bash/Agent tasks are descendant shell processes of the node process.
 if [[ "$STATE" == "idle" && -n "$CLAUDE_PID" ]]; then
+  # Collect hook's own process chain to exclude from background detection.
+  # On Linux, sh(dash) -c doesn't exec-optimize, leaving a wrapper shell
+  # that would be falsely detected as a background task.
+  HOOK_CHAIN=" $$ "
+  _hpid=$PPID
+  while (( _hpid > 1 )) && [[ "$_hpid" != "$CLAUDE_PID" ]]; do
+    HOOK_CHAIN="${HOOK_CHAIN}${_hpid} "
+    _hpid=$(ps -o ppid= -p "$_hpid" 2>/dev/null | tr -d ' ')
+  done
+
   has_bg_shell() {
     local parent=$1 depth=${2:-0}
     (( depth > 3 )) && return 1
     local child cname
     for child in $(pgrep -P "$parent" 2>/dev/null); do
-      [[ "$child" == "$$" ]] && continue
+      [[ "$HOOK_CHAIN" == *" $child "* ]] && continue
       cname=$(ps -o ucomm= -p "$child" 2>/dev/null | tr -d ' ')
       case "$cname" in
         bash|zsh|sh|fish) return 0 ;;
