@@ -68,23 +68,17 @@ This uses [Claude Code hooks](https://code.claude.com/docs/en/hooks). Add to `~/
 {
   "hooks": {
     "PreToolUse": [{
-      "hooks": [{ "type": "command", "command": "~/.config/wezterm/hooks/claude-state.sh running" }]
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh running", "async": true }]
     }],
-    "Notification": [
-      {
-        "matcher": "permission_prompt",
-        "hooks": [{ "type": "command", "command": "~/.config/wezterm/hooks/claude-state.sh asking" }]
-      },
-      {
-        "matcher": "elicitation_dialog",
-        "hooks": [{ "type": "command", "command": "~/.config/wezterm/hooks/claude-state.sh asking" }]
-      }
-    ],
+    "Notification": [{
+      "matcher": "permission_prompt|elicitation_dialog",
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh asking", "async": true }]
+    }],
     "Stop": [{
-      "hooks": [{ "type": "command", "command": "~/.config/wezterm/hooks/claude-state.sh idle" }]
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh idle", "async": true }]
     }],
     "SessionEnd": [{
-      "hooks": [{ "type": "command", "command": "~/.config/wezterm/hooks/claude-state.sh" }]
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh", "async": true }]
     }]
   }
 }
