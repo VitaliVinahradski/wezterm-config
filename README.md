@@ -21,8 +21,8 @@ Modular [WezTerm](https://wezfurlong.org/wezterm/) configuration with Catppuccin
 | `tmux.lua` | Tmux detection, binary resolution, session picker, left status |
 | `health.lua` | 20-20-20 reminder with toggle |
 | `help.lua` | F1 keybinding cheat sheet |
-| `hooks/claude-state.sh` | Claude Code hook — emits WezTerm user vars for tab state (Linux) |
-| `hooks/claude-state.zsh` | Claude Code hook — same as above (macOS) |
+| `hooked/claude-state.sh` | Claude Code hook — emits WezTerm user vars for tab state (Linux) |
+| `hooked/claude-state.zsh` | Claude Code hook — same as above (macOS) |
 
 ## Keybindings
 
@@ -62,40 +62,40 @@ Tabs visually indicate Claude Code state in background tabs:
 
 State clears automatically when Claude Code exits (`SessionEnd` hook).
 
-This uses [Claude Code hooks](https://code.claude.com/docs/en/hooks). On macOS, use `.zsh` instead of `.sh` for the hook script. Add to `~/.claude/settings.json`:
+This uses [Claude Code hooks](https://code.claude.com/docs/en/hooks). Add to `~/.claude/settings.json`:
 
 ```json
 {
   "hooks": {
     "UserPromptSubmit": [{
-      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh running", "async": true }]
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooked/claude-state.sh running", "async": true }]
     }],
     "PreToolUse": [
       {
         "matcher": "AskUserQuestion|ExitPlanMode",
-        "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh asking", "async": true }]
+        "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooked/claude-state.sh asking", "async": true }]
       },
       {
         "matcher": "^(?!AskUserQuestion$|ExitPlanMode$)",
-        "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh running", "async": true }]
+        "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooked/claude-state.sh running", "async": true }]
       }
     ],
     "PostToolUse": [{
       "matcher": "AskUserQuestion|ExitPlanMode",
-      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh running", "async": true }]
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooked/claude-state.sh running", "async": true }]
     }],
     "PermissionRequest": [{
-      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh asking", "async": true }]
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooked/claude-state.sh asking", "async": true }]
     }],
     "Notification": [{
       "matcher": "permission_prompt|elicitation_dialog",
-      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh asking", "async": true }]
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooked/claude-state.sh asking", "async": true }]
     }],
     "Stop": [{
-      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh idle", "async": true }]
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooked/claude-state.sh idle", "async": true }]
     }],
     "SessionEnd": [{
-      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooks/claude-state.sh", "async": true }]
+      "hooks": [{ "type": "command", "command": "$HOME/.config/wezterm/hooked/claude-state.sh", "async": true }]
     }]
   }
 }

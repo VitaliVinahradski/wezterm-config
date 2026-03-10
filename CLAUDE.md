@@ -18,8 +18,8 @@ The config uses `wezterm.config_builder()` with a modular structure:
 - **`health.lua`** — 20-20-20 rule: right-status warning every 20 minutes for 25 seconds; `Ctrl+Shift+H` toggle; `enabled` is module-level mutable state
 - **`resize.lua`** — `Alt+R` cycles active pane through size presets (25/33/50/67/75%); detects split axis automatically
 - **`help.lua`** — F1 InputSelector cheat sheet listing all keybindings in two-column layout
-- **`hooks/claude-state.sh`** — Claude Code hook script (Linux); emits OSC 1337 SetUserVar to ancestor PTY for tab state tracking; handles tmux passthrough
-- **`hooks/claude-state.zsh`** — Claude Code hook script (macOS); same as above using `ps` instead of `/proc`
+- **`hooked/claude-state.sh`** — Claude Code hook script (Linux); emits OSC 1337 SetUserVar to ancestor PTY for tab state tracking; handles tmux passthrough
+- **`hooked/claude-state.zsh`** — Claude Code hook script (macOS); same as above using `ps` instead of `/proc`
 
 ## Keybindings
 
@@ -57,5 +57,5 @@ Errors appear in WezTerm's debug overlay: `Ctrl+Shift+L`.
 - The `update-status` event drives both left status (tmux/shell indicator) and right status (health reminder)
 - All color constants live in `theme.lua` as the single source of truth; modules require theme and use `theme.green`, `theme.subtext`, etc.
 - `theme.register_pane_style(fn)` lets modules inject custom tab styling; `claude.lua` uses this for state-based tab indicators
-- `hooks/claude-state.sh` (Linux) walks `/proc` to find ancestor PTY since Claude Code redirects hook stdout; `hooks/claude-state.zsh` (macOS) uses `ps` instead
+- `hooked/claude-state.sh` (Linux) walks `/proc` to find ancestor PTY since Claude Code redirects hook stdout; `hooked/claude-state.zsh` (macOS) uses `ps` instead
 - Hook events: `UserPromptSubmit` → running, `PreToolUse` → running (except `AskUserQuestion`/`ExitPlanMode` → asking), `PostToolUse` (`AskUserQuestion`/`ExitPlanMode`) → running, `PermissionRequest` → asking, `Notification` (permission_prompt, elicitation_dialog) → asking (backup), `Stop` → idle, `SessionEnd` → clear (no argument); configured in `~/.claude/settings.json`
