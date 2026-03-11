@@ -1,5 +1,9 @@
 # WezTerm Config
 
+## Claude Operator Console
+
+![Screenshot](assets/screenshot.png)
+
 Modular [WezTerm](https://wezfurlong.org/wezterm/) configuration with Catppuccin Mocha theme, tmux integration, and quality-of-life extras.
 
 ## Features
