@@ -22,17 +22,22 @@ function M.keys()
       key = "K",
       mods = "CTRL|SHIFT",
       action = wezterm.action_callback(function(window, pane)
-        if tmux.is_cc(pane) and tmux.bin then
-          local target = tmux.resolve_pane()
-          if target then
-            wezterm.run_child_process({ tmux.bin, "kill-pane", "-t", target })
+        if tmux.bin and tmux.detect(pane) then
+          if tmux.is_cc(pane) then
+            -- CC pane: kill tmux pane directly
+            local target = tmux.resolve_pane()
+            if target then
+              wezterm.run_child_process({ tmux.bin, "kill-pane", "-t", target })
+            end
+            return
           end
-        else
-          window:perform_action(
-            act.CloseCurrentPane({ confirm = false }),
-            pane
-          )
+          -- Local pane running tmux: detach client to avoid EOF bug (#4317)
+          local tty = pane:get_tty_name()
+          if tty then
+            wezterm.run_child_process({ tmux.bin, "detach-client", "-t", tty })
+          end
         end
+        window:perform_action(act.CloseCurrentPane({ confirm = false }), pane)
       end),
     },
     -- Quick pane selection overlay with numeric labels

@@ -20,7 +20,7 @@ end)()
 
 function M.detect(pane)
   local domain = pane:get_domain_name()
-  if domain and domain:lower():match("mux") then
+  if domain == "tmux" then
     return true
   end
   local proc = pane:get_foreground_process_name()
@@ -32,8 +32,7 @@ end
 
 -- Returns true only for tmux CC domain panes, not local panes running tmux.
 function M.is_cc(pane)
-  local domain = pane:get_domain_name()
-  return domain ~= nil and domain:lower():match("mux") ~= nil
+  return pane:get_domain_name() == "tmux"
 end
 
 -- Finds the CC-attached tmux session name.
