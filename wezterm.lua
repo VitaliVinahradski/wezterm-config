@@ -8,6 +8,7 @@ local health = require("health")
 local help   = require("help")
 local keys   = require("keys")
 local resize = require("resize")
+local border = require("border")
 
 -- Font: Iosevka at a comfortable size for 4K HiDPI
 config.font = wezterm.font_with_fallback({
@@ -25,20 +26,27 @@ config.color_scheme = "catppuccin-mocha"
 -- RESIZE on macOS keeps native resize handles
 config.window_decorations = wezterm.target_triple:find("linux") and "NONE" or "RESIZE"
 config.window_padding = { left = 16, right = 16, top = 12, bottom = 12 }
-config.window_background_opacity = 0.93
 config.macos_window_background_blur = 20
-config.window_frame = {
-  border_left_width    = "1px",
-  border_right_width   = "1px",
-  border_top_height    = "1px",
-  border_bottom_height = "1px",
-  border_left_color    = theme.toxic,
-  border_right_color   = theme.toxic,
-  border_top_color     = theme.toxic,
-  border_bottom_color  = theme.toxic,
-  active_titlebar_bg   = theme.base,
-  inactive_titlebar_bg = theme.base,
+config.background = {
+  {
+    source = { Color = theme.base },
+    width = "100%",
+    height = "100%",
+    opacity = 0.93,
+  },
+  {
+    source = { Gradient = {
+      orientation = { Radial = { cx = 0.5, cy = 0.5, radius = 0.72 } },
+      colors = { "rgba(0,0,0,0)", theme.mantle },
+      interpolation = "Linear",
+      blend = "Rgb",
+    }},
+    width = "100%",
+    height = "100%",
+    opacity = 0.35,
+  },
 }
+config.window_frame = theme.make_window_frame(theme.toxic)
 
 -- Cursor
 config.default_cursor_style = "SteadyBar"
@@ -117,6 +125,7 @@ theme.setup_tab_title()
 wezterm.on("update-status", function(window, pane)
   pcall(tmux.update_left_status, window, pane)
   pcall(health.update_right_status, window)
+  pcall(border.update_border, window)
 end)
 
 return config

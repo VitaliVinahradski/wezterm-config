@@ -4,6 +4,7 @@ local M = {}
 
 -- catppuccin mocha palette (single source of truth)
 M.base    = "#1e1e2e"
+M.mantle  = "#181825"
 M.surface = "#45475a"
 M.overlay = "#6c7086"
 M.subtext = "#a6adc8"
@@ -27,6 +28,22 @@ M.ICON_IDLE    = "\u{f012c}" -- 󰄬
 M.ICON_TERMINAL = "\u{f489}"  --  (nf-md-console)
 M.ICON_PANES    = "\u{f7a5}"  --  (nf-md-dock_window)
 M.ICON_ZOOM     = "\u{f065}"  --  (nf-fa-expand)
+
+-- Window frame factory (single source of truth for border structure)
+function M.make_window_frame(color)
+  return {
+    border_left_width    = "1px",
+    border_right_width   = "1px",
+    border_top_height    = "1px",
+    border_bottom_height = "1px",
+    border_left_color    = color,
+    border_right_color   = color,
+    border_top_color     = color,
+    border_bottom_color  = color,
+    active_titlebar_bg   = M.base,
+    inactive_titlebar_bg = M.base,
+  }
+end
 
 -- Modules register custom per-pane styling via this list.
 -- Each fn(tab [, index, title]) returns { bg, fg, icon, bold } or nil to fall through.
