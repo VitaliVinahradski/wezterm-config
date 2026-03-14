@@ -7,31 +7,59 @@ local enabled = true
 
 local theme = require("theme")
 
-function M.update_right_status(window)
+function M.update_right_status(window, pane)
+  local bar_bg = theme.base
+  local elements = {}
+
+  -- Pane info: count + zoom state
+  local tab = window:active_tab()
+  local pane_count = tab and #tab:panes() or 1
+  local is_zoomed = false
+  if tab then
+    for _, p in ipairs(tab:panes_with_info()) do
+      if p.is_zoomed then
+        is_zoomed = true
+        break
+      end
+    end
+  end
+
+  if pane_count > 1 then
+    local pane_fg = is_zoomed and theme.peach or theme.subtext
+    local zoom_suffix = is_zoomed and (" " .. theme.ICON_ZOOM) or ""
+    table.insert(elements, { Background = { Color = bar_bg } })
+    table.insert(elements, { Foreground = { Color = pane_fg } })
+    table.insert(elements, { Text = string.format(" %d %s%s ", pane_count, theme.ICON_PANES, zoom_suffix) })
+  end
+
+  -- Health status
   if enabled then
     local now = tonumber(wezterm.time.now():format("%s"))
     local cycle = now % interval_seconds
     if cycle < 25 then
       local remaining = 25 - cycle
-      local msg = string.format(" \u{f06e} Look away ~6m for %ds ", remaining)
-      window:set_right_status(wezterm.format({
-        { Foreground = { Color = theme.base } },
-        { Background = { Color = theme.yellow } },
-        { Attribute = { Intensity = "Bold" } },
-        { Text = msg },
-      }))
+      -- Yellow pill with left powerline cap
+      table.insert(elements, { Background = { Color = bar_bg } })
+      table.insert(elements, { Foreground = { Color = theme.yellow } })
+      table.insert(elements, { Text = theme.SOLID_LEFT })
+      table.insert(elements, { Background = { Color = theme.yellow } })
+      table.insert(elements, { Foreground = { Color = theme.base } })
+      table.insert(elements, { Attribute = { Intensity = "Bold" } })
+      table.insert(elements, { Text = string.format(" \u{f06e} Look away ~6m for %ds ", remaining) })
     else
-      window:set_right_status(wezterm.format({
-        { Foreground = { Color = theme.subtext } },
-        { Text = " \u{f0f3} " },
-      }))
+      -- Idle: flat bell icon
+      table.insert(elements, { Background = { Color = bar_bg } })
+      table.insert(elements, { Foreground = { Color = theme.subtext } })
+      table.insert(elements, { Text = " \u{f0f3} " })
     end
   else
-    window:set_right_status(wezterm.format({
-      { Foreground = { Color = theme.subtext } },
-      { Text = " \u{f1f6} " },
-    }))
+    -- Disabled: bell-slash icon
+    table.insert(elements, { Background = { Color = bar_bg } })
+    table.insert(elements, { Foreground = { Color = theme.subtext } })
+    table.insert(elements, { Text = " \u{f1f6} " })
   end
+
+  window:set_right_status(wezterm.format(elements))
 end
 
 function M.keys()

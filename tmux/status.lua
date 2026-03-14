@@ -6,20 +6,28 @@ local theme = require("theme")
 local M = {}
 
 function M.update_left_status(window, pane)
+  local bar_bg = theme.base
+  local bg, fg, label
+
   if core.detect(pane) then
-    window:set_left_status(wezterm.format({
-      { Foreground = { Color = theme.green } },
-      { Attribute = { Intensity = "Bold" } },
-      { Text = " [tmux]" },
-    }))
+    bg = theme.green
+    fg = theme.base
+    label = "tmux"
   else
     local proc = pane:get_foreground_process_name() or ""
-    local shell = proc:match("([^/]+)$") or "shell"
-    window:set_left_status(wezterm.format({
-      { Foreground = { Color = theme.subtext } },
-      { Text = string.format(" [%s]", shell) },
-    }))
+    label = proc:match("([^/]+)$") or "shell"
+    bg = theme.surface
+    fg = theme.subtext
   end
+
+  window:set_left_status(wezterm.format({
+    { Background = { Color = bg } },
+    { Foreground = { Color = fg } },
+    { Text = string.format(" %s %s ", theme.ICON_TERMINAL, label) },
+    { Background = { Color = bar_bg } },
+    { Foreground = { Color = bg } },
+    { Text = theme.SOLID_RIGHT },
+  }))
 end
 
 function M.keys()

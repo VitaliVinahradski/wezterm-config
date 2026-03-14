@@ -23,6 +23,11 @@ M.ICON_RUNNING = "\u{f0ea9}" -- 󰚩
 M.ICON_ASKING  = "\u{f128}"  --
 M.ICON_IDLE    = "\u{f012c}" -- 󰄬
 
+-- Status bar icons (Nerd Font)
+M.ICON_TERMINAL = "\u{f489}"  --  (nf-md-console)
+M.ICON_PANES    = "\u{f7a5}"  --  (nf-md-dock_window)
+M.ICON_ZOOM     = "\u{f065}"  --  (nf-fa-expand)
+
 -- Modules register custom per-pane styling via this list.
 -- Each fn(tab [, index, title]) returns { bg, fg, icon, bold } or nil to fall through.
 local pane_styles = {}

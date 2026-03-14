@@ -116,7 +116,7 @@ theme.setup_tab_title()
 -- Status bar: left from tmux, right from health
 wezterm.on("update-status", function(window, pane)
   pcall(tmux.update_left_status, window, pane)
-  health.update_right_status(window)
+  health.update_right_status(window, pane)
 end)
 
 return config
