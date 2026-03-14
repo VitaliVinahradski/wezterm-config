@@ -11,9 +11,6 @@ function M.update_left_status(window, pane)
       { Foreground = { Color = theme.green } },
       { Attribute = { Intensity = "Bold" } },
       { Text = " [tmux]" },
-      "ResetAttributes",
-      { Foreground = { Color = theme.subtext } },
-      { Text = " F1:help" },
     }))
   else
     local proc = pane:get_foreground_process_name() or ""

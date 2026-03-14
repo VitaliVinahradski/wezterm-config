@@ -34,44 +34,28 @@ end
 
 local choices = format_columns({
   {
-    header = "── Tabs / Panes ──────────────────────────────────────────────────────",
+    header = "── Panes ─────────────────────────────────────────────────────────────",
     items = {
-      { "Ctrl+Shift+T",    "New tab" },
-      { "Ctrl+Shift+D",    "Split horizontal" },
-      { "Ctrl+Shift+W",    "Close tab" },
-      { "Ctrl+Shift+E",    "Split vertical" },
-      { "Ctrl+Tab",        "Next tab" },
-      { "Ctrl+Shift+Arrow", "Navigate panes" },
-      { "Ctrl+Shift+Tab",  "Previous tab" },
-      { "Ctrl+Shift+Z",    "Toggle pane zoom" },
-      { "Ctrl+Shift+1..9", "Go to tab N" },
-      { "Ctrl+Shift+K",    "Kill current pane" },
-      { "Ctrl+Shift+O",    "Pane select (jump)" },
-      { "F2",              "Rename tab / tmux window" },
+      { "Ctrl+Shift+D",        "Split horizontal" },
+      { "Ctrl+Shift+K",        "Kill current pane" },
+      { "Ctrl+Shift+E",        "Split vertical" },
+      { "Alt+R",               "Cycle pane size (25/33/50/67/75%)" },
+    },
+  },
+  {
+    header = "── Tabs ──────────────────────────────────────────────────────────────",
+    items = {
+      { "F2",                  "Rename tab / tmux window" },
+      { "Shift+Enter",        "CSI u sequence (tmux-safe)" },
       { "Ctrl+Shift+PgUp/Dn", "Move tab left / right" },
-      { "Alt+R",           "Cycle pane size (25/33/50/67/75%)" },
+      { "Ctrl+Shift+A",       "Attach tmux session" },
     },
   },
   {
-    header = "── Scrollback / Copy ─────────────────────────────────────────────────",
+    header = "── Toggles ───────────────────────────────────────────────────────────",
     items = {
-      { "Shift+PgUp/Down",  "Scroll up/down" },
-      { "Ctrl+Shift+C",     "Copy selection" },
-      { "Ctrl+Shift+F",     "Search" },
-      { "Ctrl+Shift+V",     "Paste clipboard" },
-      { "Ctrl+Shift+X",     "Activate copy mode" },
-    },
-  },
-  {
-    header = "── Font / Debug / Custom ─────────────────────────────────────────────",
-    items = {
-      { "Ctrl+= / Ctrl+-",  "Inc / dec font" },
-      { "Ctrl+Shift+A",     "Attach tmux session" },
-      { "Ctrl+0",           "Reset font size" },
-      { "Ctrl+Shift+H",     "Toggle health reminder" },
-      { "Ctrl+Shift+L",     "Debug overlay" },
-      { "F1",               "This cheat sheet" },
-      { "Ctrl+Shift+R",     "Reload config" },
+      { "Ctrl+Shift+H",       "Toggle health reminder" },
+      { "F1",                  "This cheat sheet" },
     },
   },
 })
