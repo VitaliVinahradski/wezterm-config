@@ -23,7 +23,7 @@ function M.update_left_status(window, pane)
   window:set_left_status(wezterm.format({
     { Background = { Color = bg } },
     { Foreground = { Color = fg } },
-    { Text = string.format(" %s %s ", theme.ICON_TERMINAL, label) },
+    { Text = string.format(" %s  %s ", theme.ICON_TERMINAL, label) },
     { Background = { Color = bar_bg } },
     { Foreground = { Color = bg } },
     { Text = theme.SOLID_RIGHT },

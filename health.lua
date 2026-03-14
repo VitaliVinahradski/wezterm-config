@@ -7,7 +7,7 @@ local enabled = true
 
 local theme = require("theme")
 
-function M.update_right_status(window, pane)
+function M.update_right_status(window)
   local bar_bg = theme.base
   local elements = {}
 
@@ -25,11 +25,17 @@ function M.update_right_status(window, pane)
   end
 
   if pane_count > 1 then
-    local pane_fg = is_zoomed and theme.peach or theme.subtext
+    local pane_bg = is_zoomed and theme.peach or theme.surface
+    local pane_fg = is_zoomed and theme.base or theme.subtext
     local zoom_suffix = is_zoomed and (" " .. theme.ICON_ZOOM) or ""
+    -- Left powerline cap
     table.insert(elements, { Background = { Color = bar_bg } })
+    table.insert(elements, { Foreground = { Color = pane_bg } })
+    table.insert(elements, { Text = theme.SOLID_LEFT })
+    -- Pill content
+    table.insert(elements, { Background = { Color = pane_bg } })
     table.insert(elements, { Foreground = { Color = pane_fg } })
-    table.insert(elements, { Text = string.format(" %d %s%s ", pane_count, theme.ICON_PANES, zoom_suffix) })
+    table.insert(elements, { Text = string.format(" %s %d%s ", theme.ICON_PANES, pane_count, zoom_suffix) })
   end
 
   -- Health status
