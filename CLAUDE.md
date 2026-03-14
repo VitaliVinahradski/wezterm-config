@@ -47,7 +47,7 @@ WezTerm hot-reloads `wezterm.lua` on save. To validate config syntax without rel
 wezterm --config-file ~/.config/wezterm/wezterm.lua ls-fonts
 ```
 
-Errors appear in WezTerm's debug overlay: `Ctrl+Shift+L`.
+Errors appear in WezTerm's debug overlay: `Ctrl+Shift+L`. Runtime logs live at `/run/user/$UID/wezterm/wezterm-gui-log-*.txt` (most recent file is the active session). After making changes, check the log for new warnings — but note the debug overlay shows the full session history including transient errors from earlier hot-reloads, so always check timestamps.
 
 ## Key Conventions
 
