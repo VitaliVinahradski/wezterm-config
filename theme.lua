@@ -53,85 +53,108 @@ function M.register_pane_style(fn)
   table.insert(pane_styles, fn)
 end
 
+local function resolve_tab_title(tab)
+  local title = tab.tab_title
+  if title and #title > 0 then
+    return title
+  end
+
+  local cwd = tab.active_pane.current_working_dir
+  if cwd then
+    local path = cwd.file_path or ""
+    local basename = path:match("([^/]+)/?$")
+    if basename and #basename > 0 then
+      return basename
+    end
+  end
+
+  return tab.active_pane.title
+end
+
+local function resolve_style(tab, index, title)
+  for _, fn in ipairs(pane_styles) do
+    local style = fn(tab, index, title)
+    if style then
+      return style
+    end
+  end
+  return nil
+end
+
+local function icon_prefix(style)
+  local icon = (style and style.icon) or ""
+  return icon ~= "" and (icon .. " ") or ""
+end
+
+local function active_tab_elements(style, bar_bg, index, title)
+  local bg = (style and style.bg) or M.surface
+  local fg = (style and style.fg) or M.text
+  local content = string.format(" %s%d: %s ", icon_prefix(style), index, title)
+
+  local elements = {
+    { Background = { Color = bar_bg } },
+    { Foreground = { Color = bg } },
+    { Text = M.SOLID_RIGHT },
+    { Background = { Color = bg } },
+    { Foreground = { Color = fg } },
+  }
+
+  if style and style.bold then
+    table.insert(elements, { Attribute = { Intensity = "Bold" } })
+  end
+
+  table.insert(elements, { Text = content })
+  table.insert(elements, { Background = { Color = bar_bg } })
+  table.insert(elements, { Foreground = { Color = bg } })
+  table.insert(elements, { Text = M.SOLID_LEFT })
+  return elements
+end
+
+local function inactive_state_elements(style, bar_bg, index, title, hover)
+  local elements = {
+    { Background = { Color = bar_bg } },
+    { Foreground = { Color = style.bg } },
+  }
+
+  if hover then
+    table.insert(elements, { Attribute = { Intensity = "Bold" } })
+  end
+
+  table.insert(elements, { Text = string.format(" %s%d: %s ", icon_prefix(style), index, title) })
+  return elements
+end
+
+local function inactive_default_elements(tab, bar_bg, index, title, hover)
+  local fg = hover and M.text or M.subtext
+  local unseen = ""
+  if tab.active_pane.has_unseen_output then
+    fg = M.yellow
+    unseen = "\u{25cf} "
+  end
+
+  return {
+    { Background = { Color = bar_bg } },
+    { Foreground = { Color = fg } },
+    { Text = string.format(" %s%d: %s ", unseen, index, title) },
+  }
+end
+
 function M.setup_tab_title()
   wezterm.on("format-tab-title", function(tab, _tabs, _panes, _cfg, hover)
     local index = tab.tab_index + 1
-    local title = tab.tab_title
-    if not title or #title == 0 then
-      local cwd = tab.active_pane.current_working_dir
-      if cwd then
-        local path = cwd.file_path or ""
-        title = path:match("([^/]+)/?$") or ""
-      end
-      if not title or #title == 0 then
-        title = tab.active_pane.title
-      end
-    end
-
-    -- Collect style from registered pane_style callbacks
-    local style
-    for _, fn in ipairs(pane_styles) do
-      style = fn(tab, index, title)
-      if style then break end
-    end
-
+    local title = resolve_tab_title(tab)
+    local style = resolve_style(tab, index, title)
     local bar_bg = M.base
-    local icon = (style and style.icon) or ""
-    local prefix = icon ~= "" and (icon .. " ") or ""
 
     if tab.is_active then
-      local bg = (style and style.bg) or M.surface
-      local fg = (style and style.fg) or M.text
-      local content = string.format(" %s%d: %s ", prefix, index, title)
-
-      local elements = {
-        -- Left powerline cap
-        { Background = { Color = bar_bg } },
-        { Foreground = { Color = bg } },
-        { Text = M.SOLID_RIGHT },
-        -- Content
-        { Background = { Color = bg } },
-        { Foreground = { Color = fg } },
-      }
-      if style and style.bold then
-        table.insert(elements, { Attribute = { Intensity = "Bold" } })
-      end
-      table.insert(elements, { Text = content })
-      -- Right powerline cap
-      table.insert(elements, { Background = { Color = bar_bg } })
-      table.insert(elements, { Foreground = { Color = bg } })
-      table.insert(elements, { Text = M.SOLID_LEFT })
-      return elements
+      return active_tab_elements(style, bar_bg, index, title)
     end
 
-    -- Inactive tab with state — colored text, no pill
     if style then
-      local content = string.format(" %s%d: %s ", prefix, index, title)
-      local elements = {
-        { Background = { Color = bar_bg } },
-        { Foreground = { Color = style.bg } },
-      }
-      if hover then
-        table.insert(elements, { Attribute = { Intensity = "Bold" } })
-      end
-      table.insert(elements, { Text = content })
-      return elements
+      return inactive_state_elements(style, bar_bg, index, title, hover)
     end
 
-    -- Inactive tab without state
-    local fg = M.subtext
-    if hover then fg = M.text end
-    local unseen = ""
-    if tab.active_pane.has_unseen_output then
-      fg = M.yellow
-      unseen = "\u{25cf} "
-    end
-
-    return {
-      { Background = { Color = bar_bg } },
-      { Foreground = { Color = fg } },
-      { Text = string.format(" %s%d: %s ", unseen, index, title) },
-    }
+    return inactive_default_elements(tab, bar_bg, index, title, hover)
   end)
 end
 
