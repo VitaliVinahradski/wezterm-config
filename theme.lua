@@ -13,6 +13,7 @@ M.green   = "#a6e3a1"
 M.yellow  = "#f9e2af"
 M.blue    = "#89b4fa"
 M.peach   = "#fab387"
+M.red     = "#f38ba8"
 M.toxic   = "#4AE08C"
 
 -- Powerline glyphs (Nerd Font)
