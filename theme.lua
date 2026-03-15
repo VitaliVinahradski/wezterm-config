@@ -93,15 +93,42 @@ local function resolve_style(tab, index, title)
   return nil
 end
 
-local function icon_prefix(style)
+local function collect_badges(tab, style)
+  local badges = {}
   local icon = (style and style.icon) or ""
-  return icon ~= "" and (icon .. " ") or ""
+  local has_state_icon = icon ~= ""
+
+  -- Claude/agent panes can have persistent unseen output; prioritize state badge there.
+  if tab.active_pane.has_unseen_output and not has_state_icon then
+    table.insert(badges, { text = "\u{25cf}", fg = M.yellow })
+  end
+
+  if has_state_icon then
+    local icon_fg
+    if tab.is_active then
+      icon_fg = (style and style.fg) or M.text
+    else
+      icon_fg = (style and style.bg) or M.subtext
+      -- Keep state color visible while making inactive tabs feel less "active".
+      icon_fg = M.lerp_color(icon_fg, M.subtext, 0.35)
+    end
+    table.insert(badges, { text = icon, fg = icon_fg })
+  end
+
+  return badges
 end
 
-local function active_tab_elements(style, bar_bg, index, title)
+local function append_badges(elements, badges)
+  for _, badge in ipairs(badges) do
+    table.insert(elements, { Foreground = { Color = badge.fg } })
+    table.insert(elements, { Text = badge.text .. " " })
+  end
+end
+
+local function active_tab_elements(tab, style, bar_bg, index, title)
   local bg = (style and style.bg) or M.surface
   local fg = (style and style.fg) or M.text
-  local content = string.format(" %s%d: %s ", icon_prefix(style), index, title)
+  local badges = collect_badges(tab, style)
 
   local elements = {
     { Background = { Color = bar_bg } },
@@ -109,46 +136,52 @@ local function active_tab_elements(style, bar_bg, index, title)
     { Text = M.SOLID_RIGHT },
     { Background = { Color = bg } },
     { Foreground = { Color = fg } },
+    { Text = " " },
   }
+
+  append_badges(elements, badges)
+  table.insert(elements, { Foreground = { Color = fg } })
 
   if style and style.bold then
     table.insert(elements, { Attribute = { Intensity = "Bold" } })
   end
 
-  table.insert(elements, { Text = content })
+  table.insert(elements, { Text = string.format("%d: %s ", index, title) })
+
+  if style and style.bold then
+    table.insert(elements, { Attribute = { Intensity = "Normal" } })
+  end
+
   table.insert(elements, { Background = { Color = bar_bg } })
   table.insert(elements, { Foreground = { Color = bg } })
   table.insert(elements, { Text = M.SOLID_LEFT })
   return elements
 end
 
-local function inactive_state_elements(style, bar_bg, index, title, hover)
+local function inactive_tab_elements(tab, style, bar_bg, index, title, hover)
+  local badges = collect_badges(tab, style)
+  local text_fg = hover and M.text or M.subtext
+
   local elements = {
     { Background = { Color = bar_bg } },
-    { Foreground = { Color = style.bg } },
+    { Foreground = { Color = text_fg } },
+    { Text = " " },
   }
+
+  append_badges(elements, badges)
+  table.insert(elements, { Foreground = { Color = text_fg } })
 
   if hover then
     table.insert(elements, { Attribute = { Intensity = "Bold" } })
   end
 
-  table.insert(elements, { Text = string.format(" %s%d: %s ", icon_prefix(style), index, title) })
-  return elements
-end
+  table.insert(elements, { Text = string.format("%d: %s ", index, title) })
 
-local function inactive_default_elements(tab, bar_bg, index, title, hover)
-  local fg = hover and M.text or M.subtext
-  local unseen = ""
-  if tab.active_pane.has_unseen_output then
-    fg = M.yellow
-    unseen = "\u{25cf} "
+  if hover then
+    table.insert(elements, { Attribute = { Intensity = "Normal" } })
   end
 
-  return {
-    { Background = { Color = bar_bg } },
-    { Foreground = { Color = fg } },
-    { Text = string.format(" %s%d: %s ", unseen, index, title) },
-  }
+  return elements
 end
 
 function M.setup_tab_title()
@@ -159,14 +192,10 @@ function M.setup_tab_title()
     local bar_bg = M.base
 
     if tab.is_active then
-      return active_tab_elements(style, bar_bg, index, title)
+      return active_tab_elements(tab, style, bar_bg, index, title)
     end
 
-    if style then
-      return inactive_state_elements(style, bar_bg, index, title, hover)
-    end
-
-    return inactive_default_elements(tab, bar_bg, index, title, hover)
+    return inactive_tab_elements(tab, style, bar_bg, index, title, hover)
   end)
 end
 

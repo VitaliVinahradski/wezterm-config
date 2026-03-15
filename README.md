@@ -56,13 +56,13 @@ wezterm --config-file ~/.config/wezterm/wezterm.lua ls-fonts
 
 ## Claude Code Tab Tracking
 
-Active tabs show state as a colored powerline pill; inactive tabs show state as colored text:
+Active tabs show state as a colored powerline pill; inactive tabs show compact colored badges (state and/or unseen output):
 
 | State | Icon | Color | Active | Inactive |
 |-------|------|-------|--------|----------|
-| Running | 󰚩 | Blue | Pill bg | Colored text |
-| Asking | | Peach | Pill bg | Colored text |
-| Idle | 󰄬 | Green | Pill bg | Colored text |
+| Running | 󰚩 | Blue | Pill bg | Colored badge |
+| Asking | | Peach | Pill bg | Colored badge |
+| Idle | 󰄬 | Green | Pill bg | Colored badge |
 
 Requires [Symbols Nerd Font Mono](https://www.nerdfonts.com/) installed as a font fallback.
 
