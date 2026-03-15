@@ -10,13 +10,13 @@ local keys   = require("keys")
 local resize = require("resize")
 local border = require("border")
 
--- Font: Iosevka at a comfortable size for 4K HiDPI
+-- Typography: slightly larger + tighter rhythm for readability/polish
 config.font = wezterm.font_with_fallback({
-  { family = "Iosevka", weight = "Regular" },
+  { family = "Iosevka", weight = "Medium" },
   "Symbols Nerd Font Mono",
 })
-config.font_size = 14.0
-config.line_height = 1.2
+config.font_size = 14.5
+config.line_height = 1.15
 
 -- Color scheme
 config.color_scheme = "catppuccin-mocha"
@@ -26,24 +26,24 @@ config.color_scheme = "catppuccin-mocha"
 -- RESIZE on macOS keeps native resize handles
 config.window_decorations = wezterm.target_triple:find("linux") and "NONE" or "RESIZE"
 config.window_padding = { left = 16, right = 16, top = 12, bottom = 12 }
-config.macos_window_background_blur = 20
+config.macos_window_background_blur = 28
 config.background = {
   {
     source = { Color = theme.base },
     width = "100%",
     height = "100%",
-    opacity = 0.93,
+    opacity = 0.965,
   },
   {
     source = { Gradient = {
-      orientation = { Radial = { cx = 0.5, cy = 0.5, radius = 0.72 } },
+      orientation = { Radial = { cx = 0.5, cy = 0.5, radius = 0.9 } },
       colors = { "rgba(0,0,0,0)", theme.mantle },
       interpolation = "Linear",
       blend = "Rgb",
     }},
     width = "100%",
     height = "100%",
-    opacity = 0.35,
+    opacity = 0.22,
   },
 }
 config.window_frame = theme.make_window_frame(theme.toxic)
