@@ -2,6 +2,7 @@ local core    = require("tmux.core")
 local resolve = require("tmux.resolve")
 local actions = require("tmux.actions")
 local status  = require("tmux.status")
+local manager = require("tmux.manager")
 
 local M = {}
 
@@ -21,8 +22,10 @@ M.kill_pane_action  = actions.kill_pane_action
 M.rename_tab_action = actions.rename_tab_action
 M.move_tab_action   = actions.move_tab_action
 
--- Status & keys
+-- Status
 M.update_left_status = status.update_left_status
-M.keys               = status.keys
+
+-- Manager (Ctrl+Shift+A)
+M.keys = manager.keys
 
 return M

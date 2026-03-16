@@ -48,7 +48,7 @@ local choices = format_columns({
       { "F2",                  "Rename tab / tmux window" },
       { "Shift+Enter",        "CSI u sequence (tmux-safe)" },
       { "Ctrl+Shift+PgUp/Dn", "Move tab left / right" },
-      { "Ctrl+Shift+A",       "Attach tmux session" },
+      { "Ctrl+Shift+A",       "Tmux session manager" },
     },
   },
   {

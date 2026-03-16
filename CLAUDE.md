@@ -13,8 +13,14 @@ The config uses `wezterm.config_builder()` with a modular structure:
 - **`wezterm.lua`** — entry point; loads modules, merges keybindings from each module's `keys()` export, sets up the `update-status` event (left status from tmux, right status from health)
 - **`theme.lua`** — catppuccin mocha palette (single source of truth); powerline glyph and Nerd Font icon constants; owns `format-tab-title` with retro tab bar powerline rendering and `register_pane_style(fn)` for module-injected per-pane styling
 - **`claude.lua`** — registers Claude Code tab state styles (running/asking/idle) with theme via `register_pane_style`; returns `{ bg, fg, icon, bold }` tables consumed by theme's powerline renderer; uses static colors (no escalation) for performance
-- **`keys.lua`** — declarative keybinding table: pane splits, Shift+Enter CSI u passthrough, plus tmux action factories from `tmux.lua` (kill pane, rename tab, move tab)
-- **`tmux.lua`** — `tmux.detect(pane)` checks domain name and foreground process; `tmux.bin` resolves tmux path at config load (PATH first, then Homebrew fallback); action factories (`kill_pane_action`, `rename_tab_action`, `move_tab_action`) encapsulate all tmux-vs-local branching; left status indicator; `Ctrl+Shift+A` session picker that attaches via `tmux -CC`
+- **`keys.lua`** — declarative keybinding table: pane splits, Shift+Enter CSI u passthrough, plus tmux action factories from `tmux/` (kill pane, rename tab, move tab)
+- **`tmux/`** — modular tmux integration, loaded as `require("tmux")` via `tmux/init.lua`:
+  - **`tmux/init.lua`** — re-exports public API from submodules
+  - **`tmux/core.lua`** — `bin` (path resolution at config load), `detect(pane)`, `is_cc(pane)`
+  - **`tmux/resolve.lua`** — `session()`, `window()`, `pane()` resolution via `list-clients`/`list-windows`/`list-panes`; `swap_window(direction)`
+  - **`tmux/actions.lua`** — action factories (`kill_pane_action`, `rename_tab_action`, `move_tab_action`) encapsulating tmux-vs-local branching
+  - **`tmux/status.lua`** — left status bar rendering (tmux/shell indicator)
+  - **`tmux/manager.lua`** — `Ctrl+Shift+A` session manager: chained InputSelectors for session list → actions (attach, rename, kill, new window, new session)
 - **`health.lua`** — 20-20-20 rule: right-status warning every 20 minutes for 25 seconds; `Ctrl+Shift+H` toggle; `enabled` is module-level mutable state
 - **`resize.lua`** — `Alt+R` cycles active pane through size presets (25/33/50/67/75%); detects split axis automatically
 - **`help.lua`** — F1 InputSelector cheat sheet listing all keybindings in two-column layout
@@ -35,7 +41,7 @@ Eleven custom keys across five modules:
 | `Ctrl+Shift+PageUp` | Move tab left | `keys.lua` → `tmux.move_tab_action` |
 | `Ctrl+Shift+PageDown` | Move tab right | `keys.lua` → `tmux.move_tab_action` |
 | `Alt+R` | Cycle pane resize presets | `resize.lua` |
-| `Ctrl+Shift+A` | Tmux session picker | `tmux.lua` |
+| `Ctrl+Shift+A` | Tmux session manager | `tmux/manager.lua` |
 | `Ctrl+Shift+H` | Health reminder toggle | `health.lua` |
 | `F1` | Help overlay | `help.lua` |
 
@@ -53,8 +59,8 @@ Errors appear in WezTerm's debug overlay: `Ctrl+Shift+L`. Runtime logs live at `
 
 - Config is pure Lua using the WezTerm API (`wezterm` module)
 - Each module exports a `keys()` function; `wezterm.lua` merges them all into `config.keys`
-- `tmux.lua` exports action factories (`kill_pane_action`, `rename_tab_action`, `move_tab_action`) that encapsulate all tmux-vs-local branching; `keys.lua` is a purely declarative binding table that calls these factories
-- `tmux.detect(pane)` in `tmux.lua` checks domain name and foreground process (matches both CC and local tmux panes)
+- `tmux/actions.lua` exports action factories (`kill_pane_action`, `rename_tab_action`, `move_tab_action`) that encapsulate all tmux-vs-local branching; `keys.lua` is a purely declarative binding table that calls these factories
+- `tmux/core.lua` provides `detect(pane)` (checks domain name and foreground process, matches both CC and local tmux panes) and `is_cc(pane)`
 - `tmux.is_cc(pane)` returns true only for tmux CC domain panes (domain equals `"tmux"`, the hardcoded TmuxDomain name), not local panes where tmux is the foreground process; use this when running tmux commands via `run_child_process`
 - `tmux.resolve_session()` finds the CC-attached tmux session name via `list-clients`; returns nil if no CC client
 - `tmux.resolve_window()` returns the `@window_id` of the session's active window (synced by CC); returns nil on failure for graceful degradation
