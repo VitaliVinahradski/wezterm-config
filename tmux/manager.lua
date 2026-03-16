@@ -163,7 +163,7 @@ local new_session_label = wezterm.format({
   { Text = " + New session " },
 })
 
-local function session_choices(sessions, windows_by_session)
+local function session_choices(sessions, windows_by_session, current_workspace)
   local choices = {}
   table.insert(choices, { id = ":new", label = new_session_label })
   for _, s in ipairs(sessions) do
@@ -171,6 +171,20 @@ local function session_choices(sessions, windows_by_session)
       id = s.name,
       label = format_session_label(s, windows_by_session[s.name]),
     })
+    -- Inline switch shortcut for CC-attached sessions
+    if s.cc then
+      local is_current = current_workspace == s.name
+      local switch_id = is_current and ":default" or ("switch:" .. s.name)
+      local switch_label = is_current and "switch to default" or ("switch to " .. s.name)
+      table.insert(choices, {
+        id = switch_id,
+        label = wezterm.format({
+          { Background = { Color = theme.base } },
+          { Foreground = { Color = theme.overlay } },
+          { Text = "   \u{eb6b} " .. switch_label },
+        }),
+      })
+    end
     -- Inline detach shortcut for sessions attached by other clients
     if s.other then
       table.insert(choices, {
@@ -270,11 +284,12 @@ local function show_sessions(window, pane)
     return
   end
 
+  local current_workspace = window:active_workspace()
   local choices
   if #sessions == 0 then
     choices = { { id = ":new", label = new_session_label } }
   else
-    choices = session_choices(sessions, windows_by_session)
+    choices = session_choices(sessions, windows_by_session, current_workspace)
   end
 
   -- Build lookup for CC state so the callback can pass it to show_actions
@@ -303,6 +318,17 @@ local function show_sessions(window, pane)
             }),
             p
           )
+          return
+        end
+        -- Switch to default workspace
+        if id == ":default" then
+          win:perform_action(act.SwitchToWorkspace({ name = "default" }), p)
+          return
+        end
+        -- Inline switch: switch to CC session workspace
+        local switch_target = id:match("^switch:(.+)$")
+        if switch_target then
+          win:perform_action(act.SwitchToWorkspace({ name = switch_target }), p)
           return
         end
         -- Inline detach: detach other clients from session, then re-open manager
