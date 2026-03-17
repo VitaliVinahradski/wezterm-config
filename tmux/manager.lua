@@ -196,6 +196,17 @@ local function session_choices(sessions, windows_by_session, current_workspace)
         }),
       })
     end
+    -- Inline attach shortcut for unattached sessions
+    if not s.cc and not s.other then
+      table.insert(choices, {
+        id = "attach:" .. s.name,
+        label = wezterm.format({
+          { Background = { Color = theme.base } },
+          { Foreground = { Color = theme.overlay } },
+          { Text = "   \u{eb6b} attach " .. s.name },
+        }),
+      })
+    end
   end
   return choices
 end
@@ -214,6 +225,23 @@ local function action_choices(session_name, cc)
   return choices
 end
 
+local function do_attach(win, p, session_name)
+  win:perform_action(
+    act.SwitchToWorkspace({
+      name = session_name,
+      spawn = {
+        domain = { DomainName = "local" },
+        args = {
+          "sh", "-c",
+          'printf \'\\033]1337;SetUserVar=%s=%s\\007\' tmux_cc_control dHJ1ZQ== && exec "$0" "$@"',
+          core.bin, "-CC", "attach", "-t", session_name,
+        },
+      },
+    }),
+    p
+  )
+end
+
 local function show_actions(window, pane, session_name, cc)
   window:perform_action(
     act.InputSelector({
@@ -230,20 +258,7 @@ local function show_actions(window, pane, session_name, cc)
         elseif action_id == "detach" then
           wezterm.run_child_process({ core.bin, "detach-client", "-s", session_name })
         elseif action_id == "attach" then
-          win:perform_action(
-            act.SwitchToWorkspace({
-              name = session_name,
-              spawn = {
-                domain = { DomainName = "local" },
-                args = {
-                  "sh", "-c",
-                  'printf \'\\033]1337;SetUserVar=%s=%s\\007\' tmux_cc_control dHJ1ZQ== && exec "$0" "$@"',
-                  core.bin, "-CC", "attach", "-t", session_name,
-                },
-              },
-            }),
-            p
-          )
+          do_attach(win, p, session_name)
         elseif action_id == "rename" then
           win:perform_action(
             act.PromptInputLine({
@@ -336,6 +351,12 @@ local function show_sessions(window, pane)
         if detach_target then
           wezterm.run_child_process({ core.bin, "detach-client", "-s", detach_target })
           show_sessions(win, p)
+          return
+        end
+        -- Inline attach: directly attach via tmux -CC
+        local attach_target = id:match("^attach:(.+)$")
+        if attach_target then
+          do_attach(win, p, attach_target)
           return
         end
         show_actions(win, p, id, cc_by_name[id] or false)
