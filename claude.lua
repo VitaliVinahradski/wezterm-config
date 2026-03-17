@@ -3,9 +3,7 @@ local theme = require("theme")
 
 local M = {}
 
-theme.register_pane_style(function(tab)
-  local state = tab.active_pane.user_vars.claude_state
-
+function M.style_for_state(state)
   if state == "running" then
     return { bg = theme.blue, fg = theme.base, icon = theme.ICON_RUNNING }
   elseif state == "asking" then
@@ -13,6 +11,10 @@ theme.register_pane_style(function(tab)
   elseif state == "idle" then
     return { bg = theme.green, fg = theme.base, icon = theme.ICON_IDLE, bold = true }
   end
+end
+
+theme.register_pane_style(function(tab)
+  return M.style_for_state(tab.active_pane.user_vars.claude_state)
 end)
 
 return M

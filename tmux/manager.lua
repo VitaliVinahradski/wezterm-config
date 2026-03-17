@@ -2,6 +2,7 @@ local wezterm = require("wezterm")
 local act = wezterm.action
 local core = require("tmux.core")
 local theme = require("theme")
+local claude = require("claude")
 
 local M = {}
 
@@ -53,9 +54,9 @@ local function gather_all()
       windows_by_session[sess] = windows_by_session[sess] or {}
       table.insert(windows_by_session[sess], {
         index = tonumber(idx),
-        name = name,
+        title = name ~= "" and name or cmd,
         active = active == "1",
-        command = cmd ~= "" and cmd or name,
+        style = (cmd and cmd:match("claude")) and claude.style_for_state("idle") or nil,
       })
     end
   end
@@ -74,45 +75,83 @@ local function gather_all()
   return sessions, windows_by_session
 end
 
--- Shared icon prefix for window pills (claude gets idle icon, others get space).
-local function window_prefix(is_claude)
-  if is_claude then
-    return " " .. theme.ICON_IDLE .. " "
-  end
-  return " "
-end
-
 -- Render a single window as a powerline pill (active) or plain text (inactive),
--- matching theme.lua's tab bar style.
+-- matching theme.lua's tab bar style.  win = { index, title, active, style? }
 local function append_window_pill(elements, win, bar_bg)
-  local cmd = win.command
-  local is_claude = cmd:match("claude")
-  local idx_label = string.format("%d: %s ", win.index, cmd)
-  local prefix = window_prefix(is_claude)
+  local style = win.style
+  local idx_label = string.format("%d: %s ", win.index, win.title)
 
   if win.active then
-    local bg = is_claude and theme.green or theme.surface
-    local fg = is_claude and theme.base or theme.text
+    local bg = (style and style.bg) or theme.surface
+    local fg = (style and style.fg) or theme.text
 
     table.insert(elements, { Background = { Color = bar_bg } })
     table.insert(elements, { Foreground = { Color = bg } })
     table.insert(elements, { Text = theme.SOLID_RIGHT })
     table.insert(elements, { Background = { Color = bg } })
     table.insert(elements, { Foreground = { Color = fg } })
-    table.insert(elements, { Text = prefix })
-    table.insert(elements, { Attribute = { Intensity = "Bold" } })
+    table.insert(elements, { Text = " " })
+    if style and style.icon and style.icon ~= "" then
+      table.insert(elements, { Text = style.icon .. " " })
+    end
+    if style and style.bold then
+      table.insert(elements, { Attribute = { Intensity = "Bold" } })
+    end
     table.insert(elements, { Text = idx_label })
-    table.insert(elements, { Attribute = { Intensity = "Normal" } })
+    if style and style.bold then
+      table.insert(elements, { Attribute = { Intensity = "Normal" } })
+    end
     table.insert(elements, { Background = { Color = bar_bg } })
     table.insert(elements, { Foreground = { Color = bg } })
     table.insert(elements, { Text = theme.SOLID_LEFT })
   else
-    local text_fg = is_claude and theme.green or theme.subtext
     table.insert(elements, { Background = { Color = bar_bg } })
-    table.insert(elements, { Foreground = { Color = text_fg } })
-    table.insert(elements, { Text = prefix })
+    table.insert(elements, { Foreground = { Color = theme.subtext } })
+    table.insert(elements, { Text = " " })
+    if style and style.icon and style.icon ~= "" then
+      local icon_fg = theme.lerp_color(style.bg or theme.subtext, theme.subtext, 0.35)
+      table.insert(elements, { Foreground = { Color = icon_fg } })
+      table.insert(elements, { Text = style.icon .. " " })
+      table.insert(elements, { Foreground = { Color = theme.subtext } })
+    end
     table.insert(elements, { Text = idx_label })
   end
+end
+
+-- Extract real tab data from a mux window.
+-- Returns normalized windows (same shape as gather_all output) or empty table.
+local function mux_window_tabs(mux_win)
+  local windows = {}
+  local active_tab = mux_win:active_tab()
+  local active_tab_id = active_tab and active_tab:tab_id()
+  for ti, tab in ipairs(mux_win:tabs()) do
+    local pane = tab:active_pane()
+    if not pane then goto continue end
+    local vars = pane:get_user_vars()
+    if vars.tmux_cc_control ~= "true" then
+      -- Resolve title: explicit > CWD basename > pane title (mirrors theme.lua)
+      local title = tab:get_title()
+      if not title or #title == 0 then
+        local cwd = pane:get_current_working_dir()
+        if cwd then
+          local path = cwd.file_path or ""
+          local basename = path:match("([^/]+)/?$")
+          if basename and #basename > 0 then title = basename end
+        end
+      end
+      if not title or #title == 0 then
+        title = pane:get_title()
+      end
+      table.insert(windows, {
+        index = ti,
+        title = title or "?",
+        active = tab:tab_id() == active_tab_id,
+        style = claude.style_for_state(vars.claude_state),
+      })
+    end
+    ::continue::
+  end
+  return windows
 end
 
 local function format_session_label(session, windows)
@@ -297,6 +336,23 @@ local function show_sessions(window, pane)
       pane
     )
     return
+  end
+
+  -- For CC-attached sessions, use real workspace tab data (titles, claude state)
+  local ok, all_mux = pcall(function() return wezterm.mux.all_windows() end)
+  if ok and all_mux then
+    local mux_by_ws = {}
+    for _, mux_win in ipairs(all_mux) do
+      mux_by_ws[mux_win:get_workspace()] = mux_win
+    end
+    for _, s in ipairs(sessions) do
+      if s.cc and mux_by_ws[s.name] then
+        local ws = mux_window_tabs(mux_by_ws[s.name])
+        if #ws > 0 then
+          windows_by_session[s.name] = ws
+        end
+      end
+    end
   end
 
   local current_workspace = window:active_workspace()
