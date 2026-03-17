@@ -17,19 +17,26 @@ local function tmux_find(args, pattern, predicate)
 end
 
 -- Finds the CC-attached tmux session name.
-function M.session()
+-- When window is provided, matches by workspace name (= session name in CC mode)
+-- to avoid targeting the wrong session when multiple CC sessions exist.
+function M.session(window)
   if not core.bin then return nil end
+  local workspace = window and window:active_workspace() or nil
   local _, name = tmux_find(
     { core.bin, "list-clients", "-F", "#{client_control_mode}\t#{session_name}" },
     "^(%d+)\t(.+)$",
-    function(mode) return mode == "1" end
+    function(mode, sname)
+      if mode ~= "1" then return false end
+      if workspace then return sname == workspace end
+      return true
+    end
   )
   return name
 end
 
 -- Returns the tmux @window_id for the session's active window (synced by CC).
-function M.window()
-  local session = M.session()
+function M.window(window)
+  local session = M.session(window)
   if not session then return nil end
   local _, wid = tmux_find(
     { core.bin, "list-windows", "-t", session, "-F", "#{window_active}\t#{window_id}" },
@@ -40,8 +47,8 @@ function M.window()
 end
 
 -- Returns the tmux %pane_id for the active pane in the session's active window.
-function M.pane()
-  local win = M.window()
+function M.pane(window)
+  local win = M.window(window)
   if not win then return nil end
   local _, pid = tmux_find(
     { core.bin, "list-panes", "-t", win, "-F", "#{pane_active}\t#{pane_id}" },
@@ -52,8 +59,8 @@ function M.pane()
 end
 
 -- Swap the active tmux window with its neighbor (direction: -1 left, +1 right).
-function M.swap_window(direction)
-  local session = M.session()
+function M.swap_window(direction, window)
+  local session = M.session(window)
   if not session then return end
   local ok, out = wezterm.run_child_process({
     core.bin, "list-windows", "-t", session,

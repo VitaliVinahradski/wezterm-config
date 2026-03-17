@@ -10,7 +10,7 @@ function M.kill_pane_action()
   return wezterm.action_callback(function(window, pane)
     if core.bin and core.detect(pane) then
       if core.is_cc(pane) then
-        local target = resolve.pane()
+        local target = resolve.pane(window)
         if target then
           wezterm.run_child_process({ core.bin, "kill-pane", "-t", target })
         end
@@ -36,7 +36,7 @@ function M.rename_tab_action()
         action = wezterm.action_callback(function(inner_window, inner_pane, line)
           if line then
             if core.is_cc(inner_pane) and core.bin then
-              local target = resolve.window()
+              local target = resolve.window(inner_window)
               if target then
                 wezterm.run_child_process({ core.bin, "rename-window", "-t", target, line })
               end
@@ -55,7 +55,7 @@ end
 function M.move_tab_action(direction)
   return wezterm.action_callback(function(window, pane)
     if core.is_cc(pane) then
-      resolve.swap_window(direction)
+      resolve.swap_window(direction, window)
     end
     window:perform_action(act.MoveTabRelative(direction), pane)
   end)
