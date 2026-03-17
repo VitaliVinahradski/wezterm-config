@@ -35,4 +35,21 @@ function M.update_left_status(window, pane)
   window:set_left_status(wezterm.format(left_status_elements(bg, fg, label)))
 end
 
+-- Workaround: WezTerm's tmux CC handler uses resize-window but never sends
+-- refresh-client -C, so the CC client keeps default-size (80x24). New tmux
+-- windows inherit that wrong size. Sync CC client dimensions on window resize.
+function M.sync_cc_client_size(window, pane)
+  if not core.bin or not core.is_cc(pane) then return end
+  local tab = pane:tab()
+  if not tab then return end
+  local size = tab:get_size()
+  if not size or size.cols == 0 or size.rows == 0 then return end
+  local dim = string.format("%dx%d", size.cols, size.rows)
+  local key = "cc_size_" .. tostring(window:window_id())
+  if (wezterm.GLOBAL.cc_synced or {})[key] == dim then return end
+  wezterm.GLOBAL.cc_synced = wezterm.GLOBAL.cc_synced or {}
+  wezterm.GLOBAL.cc_synced[key] = dim
+  wezterm.run_child_process({ core.bin, "refresh-client", "-C", dim })
+end
+
 return M

@@ -24,6 +24,7 @@ M.move_tab_action   = actions.move_tab_action
 
 -- Status
 M.update_left_status = status.update_left_status
+M.sync_cc_client_size = status.sync_cc_client_size
 
 -- Manager (Ctrl+Shift+A)
 M.keys = manager.keys

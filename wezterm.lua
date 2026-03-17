@@ -113,6 +113,17 @@ theme.setup_tab_title()
 wezterm.on("update-status", function(window, pane)
   pcall(tmux.update_left_status, window, pane)
   pcall(health.update_right_status, window, pane)
+  pcall(tmux.sync_cc_client_size, window, pane)
+end)
+
+-- Sync tmux CC client dimensions on window resize so new tmux windows
+-- get the correct size (workaround for WezTerm not sending refresh-client -C)
+wezterm.on("window-resized", function(window, pane)
+  -- Clear cached size so next update-status re-syncs
+  local key = "cc_size_" .. tostring(window:window_id())
+  if wezterm.GLOBAL.cc_synced then
+    wezterm.GLOBAL.cc_synced[key] = nil
+  end
 end)
 
 return config
