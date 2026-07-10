@@ -48,6 +48,14 @@ local function toast(window, message, timeout_ms)
   window:toast_notification("WezTerm", message, nil, timeout_ms or 4000)
 end
 
+-- file:// URL for OSC 7 (percent-encode anything outside the unreserved set)
+local function file_url(path)
+  local encoded = path:gsub("([^%w/._~%-])", function(c)
+    return string.format("%%%02X", string.byte(c))
+  end)
+  return "file://" .. wezterm.hostname() .. encoded
+end
+
 -- The wezterm CLI lives next to the GUI binary; needed for kill-pane since
 -- the mux Lua API has no pane kill and CloseCurrentTab via perform_action
 -- only targets the window's active tab, not an arbitrary pane.
@@ -120,6 +128,13 @@ local function open_agents(window, _pane)
         end
         if spawned_pane then
           table.insert(opened_panes, spawned_pane:pane_id())
+          -- The Claude TUI never emits OSC 7 and the attach client's process
+          -- cwd is $HOME, so WezTerm's cwd divining gives splits from agent
+          -- tabs the wrong directory. Inject OSC 7 once to pin the pane cwd
+          -- to the agent's project dir (OSC 7 takes precedence over divining).
+          if spawn_opts.cwd then
+            spawned_pane:inject_output("\x1b]7;" .. file_url(spawn_opts.cwd) .. "\x1b\\")
+          end
         end
         count = count + 1
       end
