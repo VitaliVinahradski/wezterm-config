@@ -21,6 +21,7 @@ The config uses `wezterm.config_builder()` with a modular structure:
   - **`tmux/actions.lua`** — action factories (`kill_pane_action`, `rename_tab_action`, `move_tab_action`) encapsulating tmux-vs-local branching
   - **`tmux/status.lua`** — left status bar rendering (tmux/shell indicator)
   - **`tmux/manager.lua`** — `Ctrl+Shift+A` session manager: chained InputSelectors for session list → actions (attach, rename, kill, new window, new session)
+- **`agents.lua`** — `Ctrl+Shift+G` toggle for Claude Code background agents: first press enumerates them via `claude agents --json` and opens each in its own tab running `claude attach <id>`; second press detaches them all by killing the attach panes via `wezterm cli kill-pane` (agents keep running); `opened_panes` is module-level mutable state
 - **`health.lua`** — 20-20-20 rule: right-status warning every 20 minutes for 25 seconds; `Ctrl+Shift+H` toggle; `enabled` is module-level mutable state
 - **`resize.lua`** — `Alt+R` cycles active pane through size presets (25/33/50/67/75%); detects split axis automatically
 - **`help.lua`** — F1 InputSelector cheat sheet listing all keybindings in two-column layout
@@ -29,7 +30,7 @@ The config uses `wezterm.config_builder()` with a modular structure:
 
 ## Keybindings
 
-Eleven custom keys across five modules:
+Twelve custom keys across six modules:
 
 | Key | Action | Module |
 |-----|--------|--------|
@@ -42,6 +43,7 @@ Eleven custom keys across five modules:
 | `Ctrl+Shift+PageDown` | Move tab right | `keys.lua` → `tmux.move_tab_action` |
 | `Alt+R` | Cycle pane resize presets | `resize.lua` |
 | `Ctrl+Shift+A` | Tmux session manager | `tmux/manager.lua` |
+| `Ctrl+Shift+G` | Open/close Claude agent tabs | `agents.lua` |
 | `Ctrl+Shift+H` | Health reminder toggle | `health.lua` |
 | `F1` | Help overlay | `help.lua` |
 

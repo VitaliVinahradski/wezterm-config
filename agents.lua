@@ -48,10 +48,46 @@ local function toast(window, message, timeout_ms)
   window:toast_notification("WezTerm", message, nil, timeout_ms or 4000)
 end
 
--- Open every active background agent in its own tab of the current window.
--- Enumerates via `claude agents --json` (headless, no TTY) and connects each
--- with `claude attach <id>`. Always spawns fresh: re-running opens new tabs.
+-- The wezterm CLI lives next to the GUI binary; needed for kill-pane since
+-- the mux Lua API has no pane kill and CloseCurrentTab via perform_action
+-- only targets the window's active tab, not an arbitrary pane.
+local WEZTERM_BIN = wezterm.executable_dir .. "/wezterm"
+
+-- Pane ids of agent tabs opened by the last press. Module-level mutable
+-- state (same pattern as health.lua); a config reload resets it, in which
+-- case the next press opens fresh tabs instead of closing the old ones.
+local opened_panes = {}
+
+-- Kill the panes opened by the previous press. Killing the pane only ends
+-- the `claude attach` client (detach); the background agent keeps running.
+-- Returns how many panes were actually closed (0 if all were closed by hand).
+local function detach_agents(window)
+  local closed = 0
+  for _, pane_id in ipairs(opened_panes) do
+    local ok = wezterm.run_child_process({
+      WEZTERM_BIN, "cli", "kill-pane", "--pane-id", tostring(pane_id),
+    })
+    if ok then
+      closed = closed + 1
+    end
+  end
+  opened_panes = {}
+  if closed > 0 then
+    toast(window, "Detached " .. closed .. " agent tab" .. (closed == 1 and "" or "s"), 3000)
+  end
+  return closed
+end
+
+-- Toggle: first press opens every active background agent in its own tab of
+-- the current window (enumerated via `claude agents --json`, connected with
+-- `claude attach <id>`); second press detaches them all by killing the
+-- attach panes. If every tracked tab was already closed by hand, the press
+-- falls through and opens fresh tabs.
 local function open_agents(window, _pane)
+  if #opened_panes > 0 and detach_agents(window) > 0 then
+    return
+  end
+
   if not M.bin then
     toast(window, "claude binary not found on PATH")
     return
@@ -77,10 +113,13 @@ local function open_agents(window, _pane)
       if agent.cwd and #agent.cwd > 0 then
         spawn_opts.cwd = agent.cwd
       end
-      local tab_ok, tab = pcall(mux_window.spawn_tab, mux_window, spawn_opts)
+      local tab_ok, tab, spawned_pane = pcall(mux_window.spawn_tab, mux_window, spawn_opts)
       if tab_ok and tab then
         if agent.name and #agent.name > 0 then
           tab:set_title(agent.name)
+        end
+        if spawned_pane then
+          table.insert(opened_panes, spawned_pane:pane_id())
         end
         count = count + 1
       end
