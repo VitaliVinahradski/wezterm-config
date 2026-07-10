@@ -8,6 +8,7 @@ local health = require("health")
 local help   = require("help")
 local keys   = require("keys")
 local resize = require("resize")
+local agents = require("agents")
 require("border")
 
 -- Typography: slightly larger + tighter rhythm for readability/polish
@@ -77,7 +78,7 @@ config.warn_about_missing_glyphs = false
 
 -- Compose keybindings from all modules
 config.keys = {}
-for _, mod in ipairs({ tmux, health, help, keys, resize }) do
+for _, mod in ipairs({ tmux, health, help, keys, resize, agents }) do
   for _, k in ipairs(mod.keys()) do
     table.insert(config.keys, k)
   end

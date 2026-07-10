@@ -49,6 +49,7 @@ local choices = format_columns({
       { "Shift+Enter",        "CSI u sequence (tmux-safe)" },
       { "Ctrl+Shift+PgUp/Dn", "Move tab left / right" },
       { "Ctrl+Shift+A",       "Tmux session manager" },
+      { "Ctrl+Shift+G",       "Open Claude agents as tabs" },
     },
   },
   {
