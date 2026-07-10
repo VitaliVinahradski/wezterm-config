@@ -13,16 +13,11 @@ if [ -n "$STATE" ]; then ENCODED=$(printf '%s' "$STATE" | base64 -w0); else ENCO
 # Background agents run under the daemon with no controlling tty, so the
 # ancestor walk below finds nothing. Their tabs display the session through
 # `claude attach <id>` clients, where <id> is the first 8 chars of the
-# session_id from the hook JSON on stdin. Write state to those clients'
-# PTYs directly (they run in plain wezterm panes, no tmux passthrough).
-JSON=""
-if [[ -p /dev/stdin ]]; then
-  JSON=$(cat)
-fi
-tmp=${JSON#*\"session_id\":\"}
-if [[ "$tmp" != "$JSON" ]]; then
-  sid=${tmp%%\"*}
-  agent=${sid:0:8}
+# session id (CLAUDE_CODE_SESSION_ID in the hook environment; stdin is a
+# socket for async hooks, so the JSON there is not readable the usual way).
+# Write state to those clients' PTYs directly (plain panes, no tmux).
+if [ -n "$CLAUDE_CODE_SESSION_ID" ]; then
+  agent=${CLAUDE_CODE_SESSION_ID:0:8}
   found=0
   while read -r ptty cmd; do
     if [[ "$ptty" != "?" && "$cmd" == *"claude attach ${agent}"* ]]; then
