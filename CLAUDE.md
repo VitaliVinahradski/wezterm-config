@@ -25,7 +25,7 @@ The config uses `wezterm.config_builder()` with a modular structure:
 - **`health.lua`** — 20-20-20 rule: right-status warning every 20 minutes for 25 seconds; `Ctrl+Shift+H` toggle; `enabled` is module-level mutable state
 - **`resize.lua`** — `Alt+R` cycles active pane through size presets (25/33/50/67/75%); detects split axis automatically
 - **`help.lua`** — F1 InputSelector cheat sheet listing all keybindings in two-column layout
-- **`hooked/claude-state.sh`** — Claude Code hook script (Linux); emits OSC 1337 SetUserVar to ancestor PTY for tab state tracking; handles tmux passthrough
+- **`hooked/claude-state.sh`** — Claude Code hook script (Linux); emits OSC 1337 SetUserVar to ancestor PTY for tab state tracking; handles tmux passthrough; for background agents (no controlling tty) routes state to the PTYs of `claude attach` clients found via the hook's stdin `session_id`
 - **`hooked/claude-state.zsh`** — Claude Code hook script (macOS); same as above using `ps` instead of `/proc`
 
 ## Keybindings
@@ -78,6 +78,6 @@ Errors appear in WezTerm's debug overlay: `Ctrl+Shift+L`. Runtime logs live at `
 - The tab bar uses retro mode (`use_fancy_tab_bar = false`) for full powerline rendering; `wezterm.font_with_fallback` adds Symbols Nerd Font Mono for glyph coverage
 - `theme.register_pane_style(fn)` lets modules inject custom tab styling; callbacks return `{ bg, fg, icon, bold }` or nil; active tabs render as colored powerline pills, inactive tabs with state render as colored text
 - Health icons use Nerd Font glyphs (eye, bell, bell-slash) to match the flat theme
-- `hooked/claude-state.sh` (Linux) walks `/proc` to find ancestor PTY since Claude Code redirects hook stdout; `hooked/claude-state.zsh` (macOS) uses `ps` instead
+- `hooked/claude-state.sh` (Linux) walks `/proc` to find ancestor PTY since Claude Code redirects hook stdout; `hooked/claude-state.zsh` (macOS) uses `ps` instead. Background agent sessions run under the daemon with no controlling tty, so the walk finds nothing; both scripts first read `session_id` from the hook JSON on stdin, take its first 8 chars (the agent id), and write state to the PTY of any matching `claude attach <id>` client (plain OSC, no tmux passthrough — agent tabs are plain wezterm panes)
 - Hook events: `SessionStart` (startup|resume) → idle, `UserPromptSubmit` → running, `PreToolUse` → running (except `AskUserQuestion`/`ExitPlanMode` → asking), `PostToolUse` → running (catch-all; clears asking after permission approval or answered question), `PermissionRequest` → asking, `Elicitation` → asking (MCP server input), `SubagentStart` → running, `Stop` → idle, `StopFailure` → idle (API error fallback), `SessionEnd` → clear (no argument); configured in `~/.claude/settings.json`
 - Avoided hooks: `SubagentStop` races with `Stop` — it fires twice per subagent (converted inner Stop + actual SubagentStop) and the second completes after `Stop`, overwriting idle with running. `Notification` hooks race with `PostToolUse`/`Stop` — async backup signals can arrive late and overwrite state transitions; `PermissionRequest` and `PreToolUse` already cover all asking transitions. Both are redundant (`PreToolUse`/`UserPromptSubmit` already cover running, `Stop` covers idle). See [docs/hooks.md](docs/hooks.md) for race condition diagrams.
