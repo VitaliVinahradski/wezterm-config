@@ -61,38 +61,70 @@ end
 -- only targets the window's active tab, not an arbitrary pane.
 local WEZTERM_BIN = wezterm.executable_dir .. "/wezterm"
 
--- Pane ids of agent tabs opened by the last press. Module-level mutable
--- state (same pattern as health.lua); a config reload resets it, in which
--- case the next press opens fresh tabs instead of closing the old ones.
-local opened_panes = {}
+-- True if the pane's foreground process looks like `claude attach ...`.
+-- Loose argv match (any element containing "claude" plus an "attach"
+-- element) because npm installs run as node with the cli.js path in argv.
+-- Non-local panes (e.g. tmux CC domain) return nil info and never match.
+local function is_attach_pane(pane)
+  local info = pane:get_foreground_process_info()
+  if not info or type(info.argv) ~= "table" then
+    return false
+  end
+  local claude, attach = false, false
+  for _, arg in ipairs(info.argv) do
+    if arg:find("claude", 1, true) then
+      claude = true
+    elseif arg == "attach" then
+      attach = true
+    end
+  end
+  return claude and attach
+end
 
--- Kill the panes opened by the previous press. Killing the pane only ends
--- the `claude attach` client (detach); the background agent keeps running.
--- Returns how many panes were actually closed (0 if all were closed by hand).
-local function detach_agents(window)
+-- Agent tabs are not tracked in Lua state: a config reload would build a
+-- fresh interpreter, wipe the list, and orphan the open tabs. Instead each
+-- press derives the set live by scanning every mux pane, so reloads and
+-- hand-closed tabs can never desync the toggle.
+local function find_attach_panes()
+  local panes = {}
+  for _, mux_window in ipairs(wezterm.mux.all_windows()) do
+    for _, tab in ipairs(mux_window:tabs()) do
+      for _, pane in ipairs(tab:panes()) do
+        if is_attach_pane(pane) then
+          table.insert(panes, pane)
+        end
+      end
+    end
+  end
+  return panes
+end
+
+-- Kill the attach panes. Killing the pane only ends the `claude attach`
+-- client (detach); the background agent keeps running.
+local function detach_agents(window, panes)
   local closed = 0
-  for _, pane_id in ipairs(opened_panes) do
+  for _, pane in ipairs(panes) do
     local ok = wezterm.run_child_process({
-      WEZTERM_BIN, "cli", "kill-pane", "--pane-id", tostring(pane_id),
+      WEZTERM_BIN, "cli", "kill-pane", "--pane-id", tostring(pane:pane_id()),
     })
     if ok then
       closed = closed + 1
     end
   end
-  opened_panes = {}
   if closed > 0 then
     toast(window, "Detached " .. closed .. " agent tab" .. (closed == 1 and "" or "s"), 3000)
   end
-  return closed
 end
 
 -- Toggle: first press opens every active background agent in its own tab of
 -- the current window (enumerated via `claude agents --json`, connected with
--- `claude attach <id>`); second press detaches them all by killing the
--- attach panes. If every tracked tab was already closed by hand, the press
--- falls through and opens fresh tabs.
+-- `claude attach <id>`); second press detaches every pane whose foreground
+-- process is `claude attach`, wherever it lives — including ones started by
+-- hand in a shell.
 local function open_agents(window, _pane)
-  if #opened_panes > 0 and detach_agents(window) > 0 then
+  local attach_panes = find_attach_panes()
+  if #attach_panes > 0 then
+    detach_agents(window, attach_panes)
     return
   end
 
@@ -127,7 +159,6 @@ local function open_agents(window, _pane)
           tab:set_title(agent.name)
         end
         if spawned_pane then
-          table.insert(opened_panes, spawned_pane:pane_id())
           -- The Claude TUI never emits OSC 7 and the attach client's process
           -- cwd is $HOME, so WezTerm's cwd divining gives splits from agent
           -- tabs the wrong directory. Inject OSC 7 once to pin the pane cwd
